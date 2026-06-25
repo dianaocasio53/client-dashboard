@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>DianaOcasioInc — Client Dashboard</title>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:#f0f2f5;font-family:'Segoe UI',Arial,sans-serif;color:#222}
+select,input,textarea,button{font-family:inherit}
+button{cursor:pointer}
+.tab-bar{background:#13132a;display:flex;padding-left:24px;border-bottom:2px solid rgba(212,175,55,0.13)}
+.tab{padding:11px 22px;font-size:13px;font-weight:700;color:#8888aa;border:none;border-bottom:3px solid transparent;background:transparent;letter-spacing:.3px}
+.tab.active{color:#d4af37;border-bottom:3px solid #d4af37}
+.header{background:#1a1a2e;color:#d4af37;padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,.3);position:sticky;top:0;z-index:100}
+.header-title{font-size:19px;font-weight:700;letter-spacing:.4px}
+.header-right{display:flex;align-items:center;gap:10px}
+.body{display:flex;padding:24px;max-width:1600px;margin:0 auto;gap:0}
+.sidebar{width:230px;flex-shrink:0;margin-right:20px}
+.main{flex:1;min-width:0}
+.card{background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.1);padding:20px;margin-bottom:16px}
+.section-title{font-size:15px;font-weight:700;color:#1a1a2e;margin-bottom:12px;border-bottom:2px solid #d4af37;padding-bottom:6px}
+label.lbl{font-size:12px;font-weight:600;color:#555;margin-bottom:4px;display:block}
+select.sel,input.inp{width:100%;padding:7px 10px;border-radius:6px;border:1px solid #ccc;font-size:13px;margin-bottom:12px;background:#fff}
+textarea.ta{width:100%;padding:9px 12px;border-radius:6px;border:1px solid #ccc;font-size:13px;resize:vertical;font-family:inherit}
+.btn{background:#d4af37;color:#1a1a2e;border:none;border-radius:6px;padding:7px 16px;font-weight:700;font-size:13px}
+.btn-outline{background:transparent;color:#d4af37;border:2px solid #d4af37;border-radius:6px;padding:6px 14px;font-weight:700;font-size:13px}
+.btn-sm{background:#d4af37;color:#1a1a2e;border:none;border-radius:5px;padding:4px 10px;font-weight:700;font-size:12px}
+.btn-ghost{background:transparent;color:#888;border:1px solid #ddd;border-radius:5px;padding:4px 10px;font-weight:600;font-size:12px}
+.btn-danger{background:transparent;color:#dc3545;border:1px solid #dc3545;border-radius:5px;padding:4px 10px;font-weight:600;font-size:12px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#1a1a2e;color:#d4af37;padding:10px 12px;text-align:left;cursor:pointer;user-select:none;white-space:nowrap}
+td{padding:9px 12px;border-bottom:1px solid #eee;vertical-align:top}
+.badge{background:#dc3545;color:#fff;border-radius:10px;padding:1px 7px;font-size:11px;font-weight:700}
+.badge-gold{background:#d4af37;color:#1a1a2e;border-radius:10px;padding:1px 7px;font-size:11px;font-weight:700;margin-left:6px}
+.notif-panel{position:fixed;right:0;top:60px;bottom:0;width:340px;background:#fff;box-shadow:-2px 0 12px rgba(0,0,0,.15);z-index:200;display:flex;flex-direction:column}
+.notif-header{background:#1a1a2e;color:#d4af37;padding:14px 18px;font-weight:700;font-size:15px;display:flex;justify-content:space-between;align-items:center}
+.notif-item{padding:12px 16px;border-bottom:1px solid #eee;cursor:pointer}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;display:flex;align-items:center;justify-content:center}
+.modal-card{background:#fff;border-radius:12px;padding:32px;width:460px;max-width:95vw;box-shadow:0 8px 32px rgba(0,0,0,.25)}
+.preview-banner{background:#fd7e14;color:#fff;padding:8px 24px;font-size:13px;font-weight:600;display:flex;justify-content:space-between;align-items:center}
+.login-wrap{min-height:100vh;background:#1a1a2e;display:flex;align-items:center;justify-content:center}
+.login-card{background:#fff;border-radius:12px;padding:40px;width:380px;box-shadow:0 4px 24px rgba(0,0,0,.3)}
+.client-card{background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.1);padding:18px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.err{color:#dc3545;font-size:12px;margin-bottom:10px}
+.ok{color:#155724;font-size:13px;font-weight:600}
+.upload-hint{font-size:12px;color:#888;line-height:1.6;margin-top:12px}
+.progress-bar-bg{height:6px;background:#eee;border-radius:4px;overflow:hidden;flex:1;max-width:200px}
+.progress-bar-fill{height:100%;background:#28a745;border-radius:4px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+(function(){
+"use strict";
+const e = React.createElement;
+const {useState,useEffect,useRef} = React;
+
+// ── DATA ─────────────────────────────────────────────────────────────────────
+const SEED_CLIENTS=[
+  {id:"leah-stiles",name:"Leah Stiles",email:"leahstiles@sea-waves.org",org:"SEA WAVES",phone:"",website:"sea-waves.org",addedDate:"2026-06-01",status:"Active"},
+  {id:"stephanie-mines",name:"Stephanie Mines",email:"tara-approach@prodigy.net",org:"The TARA Approach",phone:"",website:"thetaraapproach.com",addedDate:"2026-06-01",status:"Active"},
+];
+const SEED_TASKS=[
+  {id:1,projectName:"Call local pizza places for pizza donation",client:"Leah Stiles",category:"Thursday Event",status:"Complete",dueDate:"2026-06-11",deliverable:"Pizza donation secured",nextAction:"Follow up if no response",lastUpdated:"2026-06-08"},
+  {id:2,projectName:"Reach out to small local businesses for donations",client:"Leah Stiles",category:"Thursday Event",status:"Complete",dueDate:"2026-06-11",deliverable:"Donation commitments",nextAction:"Thank donors",lastUpdated:"2026-06-08"},
+  {id:3,projectName:"Contact florist for donation",client:"Leah Stiles",category:"Thursday Event",status:"Complete",dueDate:"2026-06-11",deliverable:"Floral donation secured",nextAction:"Confirm pickup/delivery",lastUpdated:"2026-06-08"},
+  {id:4,projectName:"Contact Dallas event coordinator",client:"Leah Stiles",category:"Dallas Event",status:"Complete",dueDate:"2026-06-15",deliverable:"Coordinator contact made",nextAction:"Follow up on details",lastUpdated:"2026-06-08"},
+  {id:5,projectName:"Research veteran nonprofits in Dallas",client:"Leah Stiles",category:"Dallas Event",status:"Complete",dueDate:"2026-06-15",deliverable:"Nonprofit list",nextAction:"Reach out to top 5",lastUpdated:"2026-06-08"},
+  {id:6,projectName:"Create flyer for Dallas event",client:"Leah Stiles",category:"Dallas Event",status:"Complete",dueDate:"2026-06-15",deliverable:"Event flyer",nextAction:"Distribute flyer",lastUpdated:"2026-06-08"},
+  {id:7,projectName:"Create sponsorship ad for Dallas event",client:"Leah Stiles",category:"Dallas Event",status:"Complete",dueDate:"2026-06-15",deliverable:"Sponsorship ad",nextAction:"Send to sponsors",lastUpdated:"2026-06-08"},
+  {id:8,projectName:"Create Dallas press release + contact local media",client:"Leah Stiles",category:"Dallas Event",status:"Complete",dueDate:"2026-06-15",deliverable:"Press release sent",nextAction:"Follow up with media",lastUpdated:"2026-06-08"},
+  {id:9,projectName:"Order and ship books to Dallas",client:"Leah Stiles",category:"Dallas Event",status:"Complete",dueDate:"2026-06-15",deliverable:"Books shipped",nextAction:"Confirm delivery",lastUpdated:"2026-06-08"},
+  {id:10,projectName:"Help with airline & hotel planning",client:"Leah Stiles",category:"Dallas Event",status:"Complete",dueDate:"2026-06-15",deliverable:"Travel booked",nextAction:"Send itinerary to Leah",lastUpdated:"2026-06-08"},
+  {id:11,projectName:"Plan for outreach materials / swag at Dallas event",client:"Leah Stiles",category:"Dallas Event",status:"Complete",dueDate:"2026-06-15",deliverable:"Swag plan finalized",nextAction:"Confirm print/ship method",lastUpdated:"2026-06-08"},
+  {id:12,projectName:"Update the Podcast List in Monday with Drive spreadsheets",client:"Leah Stiles",category:"Media & Outreach",status:"Complete",dueDate:"2026-06-30",deliverable:"Updated podcast list in Monday",nextAction:"Begin pitching",lastUpdated:"2026-06-08"},
+  {id:13,projectName:"Update outreach list with Project HEAL Healers Circle providers",client:"Leah Stiles",category:"Media & Outreach",status:"Complete",dueDate:"2026-06-30",deliverable:"Updated outreach list",nextAction:"Begin outreach",lastUpdated:"2026-06-08"},
+  {id:14,projectName:"Submit Mental Health Janitors Podcast application",client:"Leah Stiles",category:"Media & Outreach",status:"Complete",dueDate:"2026-06-20",deliverable:"Application submitted — APPROVED",nextAction:"Schedule recording date",lastUpdated:"2026-06-08"},
+  {id:15,projectName:"Begin sending podcast pitches once templates are approved",client:"Leah Stiles",category:"Media & Outreach",status:"In Progress",dueDate:"2026-07-15",deliverable:"Pitches sent & tracked in Monday",nextAction:"Await template approval then begin",lastUpdated:"2026-06-08"},
+  {id:16,projectName:"Begin speaking engagement outreach using approved template",client:"Leah Stiles",category:"Media & Outreach",status:"Pending",dueDate:"2026-07-15",deliverable:"Speaking outreach tracker",nextAction:"Template approval first",lastUpdated:"2026-06-08"},
+  {id:17,projectName:"Follow up on all unanswered podcast and speaking pitches",client:"Leah Stiles",category:"Media & Outreach",status:"Pending",dueDate:"2026-07-31",deliverable:"Follow-up log",nextAction:"Schedule follow-up cadence",lastUpdated:"2026-06-08"},
+  {id:18,projectName:"Research & compile NAMI conference locations with open calls for speakers",client:"Leah Stiles",category:"Media & Outreach",status:"Complete",dueDate:"2026-06-20",deliverable:"NAMI conference list",nextAction:"Apply to top priorities",lastUpdated:"2026-06-08"},
+  {id:19,projectName:"Adapt Leah's Orlando NAMI application for NAMI Upstate New York + submit",client:"Leah Stiles",category:"Media & Outreach",status:"In Progress",dueDate:"2026-06-30",deliverable:"Upstate NY application submitted",nextAction:"Adapt + submit (priority)",lastUpdated:"2026-06-08"},
+  {id:20,projectName:"Research additional NAMI conference locations to apply to",client:"Leah Stiles",category:"Media & Outreach",status:"Complete",dueDate:"2026-06-20",deliverable:"Additional NAMI conference list",nextAction:"Submit to top picks",lastUpdated:"2026-06-08"},
+  {id:21,projectName:"Build a Conference Calendar in Monday",client:"Leah Stiles",category:"Conferences & Speaking",status:"Pending",dueDate:"2026-07-01",deliverable:"Conference calendar",nextAction:"Create board in Monday",lastUpdated:"2026-06-08"},
+  {id:22,projectName:"Set up Google Alerts for military/mental health conference opportunities",client:"Leah Stiles",category:"Conferences & Speaking",status:"Pending",dueDate:"2026-07-01",deliverable:"Google Alerts active",nextAction:"Set up 5 alert keywords",lastUpdated:"2026-06-08"},
+  {id:23,projectName:"Confirm Military Influencers Conference Tampa logistics and prep",client:"Leah Stiles",category:"Conferences & Speaking",status:"In Progress",dueDate:"2026-07-01",deliverable:"Logistics confirmed",nextAction:"Confirm registration + hotel",lastUpdated:"2026-06-08"},
+  {id:24,projectName:"Check status of virtual speaking engagement before conference",client:"Leah Stiles",category:"Conferences & Speaking",status:"Pending",dueDate:"2026-07-01",deliverable:"Virtual engagement confirmed",nextAction:"Email organizer",lastUpdated:"2026-06-08"},
+  {id:25,projectName:"Review Conference Calendar — flag upcoming July deadlines",client:"Leah Stiles",category:"Conferences & Speaking",status:"Pending",dueDate:"2026-06-30",deliverable:"Flagged deadline list",nextAction:"Review calendar once built",lastUpdated:"2026-06-08"},
+  {id:26,projectName:"Review & update gala planning documents folder on Google Drive",client:"Leah Stiles",category:"Gala Planning",status:"Pending",dueDate:"2026-07-01",deliverable:"Updated gala folder",nextAction:"Open Drive and audit files",lastUpdated:"2026-06-08"},
+  {id:27,projectName:"Coordinate with Valerie, Brittney, Charlotte & Leah to schedule recurring Gala Planning meeting",client:"Leah Stiles",category:"Gala Planning",status:"Pending",dueDate:"2026-07-01",deliverable:"Recurring meeting on calendar",nextAction:"Send calendar invite to all four",lastUpdated:"2026-06-08"},
+  {id:28,projectName:"Coordinate with Brittney on fundraising outreach template for local Tampa donors",client:"Leah Stiles",category:"Gala Planning",status:"Pending",dueDate:"2026-07-01",deliverable:"Fundraising outreach template",nextAction:"Message Brittney on Slack",lastUpdated:"2026-06-08"},
+  {id:29,projectName:"Attend first recurring Gala Planning meeting — track action items in Monday",client:"Leah Stiles",category:"Gala Planning",status:"Pending",dueDate:"2026-07-15",deliverable:"Action items in Monday",nextAction:"Await meeting schedule",lastUpdated:"2026-06-08"},
+  {id:30,projectName:"Keep all gala action items tracked & meeting running smoothly into July",client:"Leah Stiles",category:"Gala Planning",status:"Pending",dueDate:"2026-07-31",deliverable:"Ongoing gala tracker",nextAction:"Maintain after first meeting",lastUpdated:"2026-06-08"},
+  {id:31,projectName:"Call Walmart and Publix about grants",client:"Leah Stiles",category:"Grants & Partnerships",status:"Pending",dueDate:"2026-07-01",deliverable:"Grant call log",nextAction:"Find correct grant contact at each",lastUpdated:"2026-06-08"},
+  {id:32,projectName:"Search and apply to grants on 501see.app",client:"Leah Stiles",category:"Grants & Partnerships",status:"Pending",dueDate:"2026-07-31",deliverable:"Grant applications submitted",nextAction:"Log in and search",lastUpdated:"2026-06-08"},
+  {id:33,projectName:"Build a Grants Tracker in Monday",client:"Leah Stiles",category:"Grants & Partnerships",status:"Pending",dueDate:"2026-07-01",deliverable:"Grants tracker board",nextAction:"Create Monday board",lastUpdated:"2026-06-08"},
+  {id:34,projectName:"Research new open grant opportunities relevant to Sea Waves",client:"Leah Stiles",category:"Grants & Partnerships",status:"Pending",dueDate:"2026-07-15",deliverable:"Grant opportunities list",nextAction:"Start with 501see.app",lastUpdated:"2026-06-08"},
+  {id:35,projectName:"Get SEA WAVES listed in MFV Resources directory",client:"Leah Stiles",category:"Resource Listings",status:"Pending",dueDate:"2026-08-01",deliverable:"Sea Waves on MFVResources.com",nextAction:"No rush per Leah",lastUpdated:"2026-06-08"},
+  {id:36,projectName:"Research orgs where Sea Waves should be listed",client:"Leah Stiles",category:"Resource Listings",status:"Pending",dueDate:"2026-07-15",deliverable:"Listing opportunity research doc",nextAction:"Check Mission Roll Call, Blue Star Families, etc.",lastUpdated:"2026-06-08"},
+  {id:37,projectName:"Create Monday tracker for resource listing submissions",client:"Leah Stiles",category:"Resource Listings",status:"Pending",dueDate:"2026-07-01",deliverable:"Resource listing tracker in Monday",nextAction:"Build Monday board",lastUpdated:"2026-06-08"},
+  {id:38,projectName:"Begin outreach to list Sea Waves on Mission Roll Call and Blue Star Families",client:"Leah Stiles",category:"Resource Listings",status:"Pending",dueDate:"2026-07-15",deliverable:"Listing submissions sent",nextAction:"After tracker is built",lastUpdated:"2026-06-08"},
+  {id:39,projectName:"Identify 3-5 additional organizations for the tracker",client:"Leah Stiles",category:"Resource Listings",status:"Pending",dueDate:"2026-07-15",deliverable:"3-5 additional orgs added to tracker",nextAction:"Research + add to Monday",lastUpdated:"2026-06-08"},
+  {id:40,projectName:"Follow up on pending submissions & compile a status report",client:"Leah Stiles",category:"Resource Listings",status:"Pending",dueDate:"2026-07-31",deliverable:"Resource listing status report",nextAction:"After initial outreach is sent",lastUpdated:"2026-06-08"},
+  {id:41,projectName:"Set up the review/approval workflow automation in Monday",client:"Leah Stiles",category:"Monday.com & Systems",status:"Pending",dueDate:"2026-07-01",deliverable:"Automation live in Monday",nextAction:"Check if Monday supports this workflow",lastUpdated:"2026-06-08"},
+  {id:42,projectName:"Test the automation with a sample task before going live",client:"Leah Stiles",category:"Monday.com & Systems",status:"Pending",dueDate:"2026-07-01",deliverable:"Automation tested",nextAction:"After setup is complete",lastUpdated:"2026-06-08"},
+  {id:43,projectName:"Document how the Monday workflow works so it can be handed off",client:"Leah Stiles",category:"Monday.com & Systems",status:"Pending",dueDate:"2026-07-15",deliverable:"Workflow documentation",nextAction:"After automation is tested",lastUpdated:"2026-06-08"},
+  {id:44,projectName:"Update Leah's to-do list in Monday",client:"Leah Stiles",category:"Monday.com & Systems",status:"Pending",dueDate:"2026-06-30",deliverable:"Monday board updated",nextAction:"Use this task list as source",lastUpdated:"2026-06-08"},
+  {id:45,projectName:"Create a brain-dump list for Leah in Slack",client:"Leah Stiles",category:"Monday.com & Systems",status:"Pending",dueDate:"2026-06-30",deliverable:"Slack brain-dump posted",nextAction:"Draft in Slack",lastUpdated:"2026-06-08"},
+  {id:46,projectName:"Create a to-do list for each event in Monday",client:"Leah Stiles",category:"Monday.com & Systems",status:"Pending",dueDate:"2026-07-01",deliverable:"Event task lists in Monday",nextAction:"Start with Gala + Military Influencers",lastUpdated:"2026-06-08"},
+  {id:47,projectName:"Pull events attended this year from Board Dashboard",client:"Leah Stiles",category:"Impact Data & Tracking",status:"Pending",dueDate:"2026-07-01",deliverable:"Events list in Monday",nextAction:"Access Board Dashboard",lastUpdated:"2026-06-08"},
+  {id:48,projectName:"Research approximate audience size & data per event for impact statements",client:"Leah Stiles",category:"Impact Data & Tracking",status:"Pending",dueDate:"2026-07-15",deliverable:"Audience size data per event",nextAction:"Ask Leah for any existing data",lastUpdated:"2026-06-08"},
+  {id:49,projectName:"Build an Impact Tracking Template",client:"Leah Stiles",category:"Impact Data & Tracking",status:"Pending",dueDate:"2026-07-15",deliverable:"Impact tracking template",nextAction:"Build after data is pulled",lastUpdated:"2026-06-08"},
+  {id:50,projectName:"Create monthly themes for social media + newsletters",client:"Leah Stiles",category:"Content & Marketing",status:"Pending",dueDate:"2026-06-30",deliverable:"Monthly content themes",nextAction:"Draft July theme options",lastUpdated:"2026-06-08"},
+  {id:51,projectName:"Connect with Charlotte — align on June drafts & newsletter support",client:"Leah Stiles",category:"Content & Marketing",status:"In Progress",dueDate:"2026-06-25",deliverable:"Aligned June content plan",nextAction:"Slack Charlotte",lastUpdated:"2026-06-08"},
+  {id:52,projectName:"Collect content plans from Charlotte, Gracie & Brittney",client:"Leah Stiles",category:"Content & Marketing",status:"In Progress",dueDate:"2026-06-25",deliverable:"Three content plans received",nextAction:"Message each on Slack",lastUpdated:"2026-06-08"},
+  {id:53,projectName:"Merge all three into one unified monthly content plan",client:"Leah Stiles",category:"Content & Marketing",status:"Pending",dueDate:"2026-06-28",deliverable:"Unified content plan",nextAction:"After all three plans are collected",lastUpdated:"2026-06-08"},
+  {id:54,projectName:"Write/outline the June newsletter and submit to Leah",client:"Leah Stiles",category:"Content & Marketing",status:"Pending",dueDate:"2026-06-27",deliverable:"June newsletter draft",nextAction:"Draft outline first",lastUpdated:"2026-06-08"},
+  {id:55,projectName:"Pull recap content from 2 recent conferences — draft 1-2 posts",client:"Leah Stiles",category:"Content & Marketing",status:"Pending",dueDate:"2026-06-30",deliverable:"1-2 conference recap posts",nextAction:"Pull photos and notes",lastUpdated:"2026-06-08"},
+  {id:56,projectName:"Develop a content repurposing workflow (blog to newsletter to social)",client:"Leah Stiles",category:"Content & Marketing",status:"Pending",dueDate:"2026-07-15",deliverable:"Repurposing workflow doc",nextAction:"Draft workflow steps",lastUpdated:"2026-06-08"},
+  {id:57,projectName:"Apply the repurposing workflow to one existing blog post",client:"Leah Stiles",category:"Content & Marketing",status:"Pending",dueDate:"2026-07-15",deliverable:"One blog post repurposed",nextAction:"After workflow is documented",lastUpdated:"2026-06-08"},
+  {id:58,projectName:"Research Substack & LinkedIn Newsletter as channels — present pros/cons to Leah",client:"Leah Stiles",category:"Content & Marketing",status:"Pending",dueDate:"2026-07-15",deliverable:"Pros/cons summary for Leah",nextAction:"Research both platforms",lastUpdated:"2026-06-08"},
+  {id:59,projectName:"Begin planning July book & speaking social content",client:"Leah Stiles",category:"Content & Marketing",status:"Pending",dueDate:"2026-06-30",deliverable:"July social content plan",nextAction:"Draft July post calendar",lastUpdated:"2026-06-08"},
+  {id:60,projectName:"Finalize & schedule remaining June content",client:"Leah Stiles",category:"Content & Marketing",status:"In Progress",dueDate:"2026-06-28",deliverable:"Remaining June posts scheduled",nextAction:"Review what's still pending",lastUpdated:"2026-06-08"},
+  {id:61,projectName:"Draft the July newsletter outline",client:"Leah Stiles",category:"Content & Marketing",status:"Pending",dueDate:"2026-07-01",deliverable:"July newsletter outline",nextAction:"Draft after June is done",lastUpdated:"2026-06-08"},
+  {id:62,projectName:"Create newsletter business ad (The Lady Di Vibe + Gracie's)",client:"Leah Stiles",category:"Content & Marketing",status:"Pending",dueDate:"2026-07-15",deliverable:"Newsletter business ad",nextAction:"Design ad copy + graphic",lastUpdated:"2026-06-08"},
+  {id:63,projectName:"Develop a merch plan for SEA WAVES",client:"Leah Stiles",category:"Content & Marketing",status:"Pending",dueDate:"2026-07-31",deliverable:"Merch plan document",nextAction:"Research merch vendors",lastUpdated:"2026-06-08"},
+  {id:64,projectName:"Tag, thank & highlight Totally Psyched Spa for hosting event + MEDAL training",client:"Leah Stiles",category:"Content & Marketing",status:"Complete",dueDate:"2026-06-15",deliverable:"Social post published",nextAction:"Done",lastUpdated:"2026-06-08"},
+  {id:65,projectName:"Reach out to Jenna Carlton — ask about Women's Veteran Workbook download",client:"Leah Stiles",category:"Book & Collab",status:"Pending",dueDate:"2026-07-01",deliverable:"Jenna contacted",nextAction:"Find Jenna's contact info",lastUpdated:"2026-06-08"},
+  {id:66,projectName:"Ask Jenna if she'd like to collab on the free-download post",client:"Leah Stiles",category:"Book & Collab",status:"Pending",dueDate:"2026-07-01",deliverable:"Collab confirmed/declined",nextAction:"After initial reach-out",lastUpdated:"2026-06-08"},
+  {id:67,projectName:"Remind Leah to get the free download code from Amazon/KDP",client:"Leah Stiles",category:"Book & Collab",status:"Pending",dueDate:"2026-06-30",deliverable:"KDP code obtained",nextAction:"Send Leah a reminder",lastUpdated:"2026-06-08"},
+  {id:68,projectName:"Write an SOP for the monthly content planning process",client:"Leah Stiles",category:"SOPs",status:"Pending",dueDate:"2026-07-15",deliverable:"Content planning SOP document",nextAction:"Draft process steps",lastUpdated:"2026-06-08"},
+  {id:69,projectName:"Delegate monthly content consolidation process to Rebecca (HN)",client:"Leah Stiles",category:"SOPs",status:"Pending",dueDate:"2026-07-31",deliverable:"Rebecca trained on SOP",nextAction:"After SOP is complete",lastUpdated:"2026-06-08"},
+  {id:70,projectName:"Create graphic flyer for Leah (IVMF ambassador)",client:"Leah Stiles",category:"Ambassador Applications",status:"Complete",dueDate:"2026-06-15",deliverable:"IVMF ambassador flyer",nextAction:"Done",lastUpdated:"2026-06-08"},
+  {id:71,projectName:"Apply on Leah's behalf for the Comfort ambassador program",client:"Leah Stiles",category:"Ambassador Applications",status:"Complete",dueDate:"2026-06-15",deliverable:"Comfort ambassador application submitted",nextAction:"Await response",lastUpdated:"2026-06-08"},
+  {id:72,projectName:"Create completion certificates for MEDAL training students",client:"Leah Stiles",category:"MEDAL Training",status:"Pending",dueDate:"2026-07-01",deliverable:"Completion certificates",nextAction:"Design certificate template",lastUpdated:"2026-06-08"},
+  {id:73,projectName:"Order more bifold brochures",client:"Leah Stiles",category:"Materials & Supplies",status:"Pending",dueDate:"2026-07-01",deliverable:"Brochures ordered",nextAction:"Check current inventory first",lastUpdated:"2026-06-08"},
+  {id:74,projectName:"Mid-month check-in with Leah — hours, wins, Week 4 priorities",client:"Leah Stiles",category:"Reporting & Check-ins",status:"Pending",dueDate:"2026-06-25",deliverable:"Mid-month check-in completed",nextAction:"Schedule with Leah",lastUpdated:"2026-06-08"},
+  {id:75,projectName:"Compile end-of-month report — hours, tasks, outreach sent, responses",client:"Leah Stiles",category:"Reporting & Check-ins",status:"Pending",dueDate:"2026-06-30",deliverable:"June end-of-month report",nextAction:"Start tracking hours now",lastUpdated:"2026-06-08"},
+  {id:76,projectName:"Present Leah with a prioritized list for July",client:"Leah Stiles",category:"Reporting & Check-ins",status:"Pending",dueDate:"2026-06-30",deliverable:"July priority list",nextAction:"Draft after end-of-month review",lastUpdated:"2026-06-08"},
+  {id:77,projectName:"Identify blockers — things needed FROM Leah to keep moving",client:"Leah Stiles",category:"Reporting & Check-ins",status:"In Progress",dueDate:"2026-06-25",deliverable:"Blockers list shared with Leah",nextAction:"Compile current blockers",lastUpdated:"2026-06-08"},
+  {id:78,projectName:"Check Monday daily & update task statuses",client:"Leah Stiles",category:"Ongoing — Weekly",status:"In Progress",dueDate:"2026-06-30",deliverable:"Monday board current",nextAction:"Daily habit",lastUpdated:"2026-06-08"},
+  {id:79,projectName:"Send weekly update — what you worked on + what's next",client:"Leah Stiles",category:"Ongoing — Weekly",status:"In Progress",dueDate:"2026-06-27",deliverable:"Weekly update sent",nextAction:"Send by Friday",lastUpdated:"2026-06-08"},
+  {id:80,projectName:"Manage Leah's personal calendar AND the SEA WAVES calendar",client:"Leah Stiles",category:"Ongoing — Weekly",status:"In Progress",dueDate:"2026-06-30",deliverable:"Calendars up to date",nextAction:"Ongoing",lastUpdated:"2026-06-08"},
+  {id:81,projectName:"Flag deadlines & opportunities to Leah as they come in",client:"Leah Stiles",category:"Ongoing — Weekly",status:"In Progress",dueDate:"2026-06-30",deliverable:"Leah informed of upcoming deadlines",nextAction:"Ongoing",lastUpdated:"2026-06-08"},
+  {id:82,projectName:"Stay in sync with Charlotte, Gracie & Brittney on Slack",client:"Leah Stiles",category:"Ongoing — Weekly",status:"In Progress",dueDate:"2026-06-30",deliverable:"Team aligned on Slack",nextAction:"Ongoing",lastUpdated:"2026-06-08"},
+  {id:83,projectName:"Track all hours worked",client:"Leah Stiles",category:"Ongoing — Weekly",status:"In Progress",dueDate:"2026-06-30",deliverable:"Hours log current",nextAction:"Log daily",lastUpdated:"2026-06-08"},
+  {id:84,projectName:"Communicate anything blocking progress — don't sit on it",client:"Leah Stiles",category:"Ongoing — Weekly",status:"In Progress",dueDate:"2026-06-30",deliverable:"Blockers communicated promptly",nextAction:"Ongoing",lastUpdated:"2026-06-08"},
+  {id:85,projectName:"TARA Approach website content review",client:"Stephanie Mines",category:"Website",status:"In Progress",dueDate:"2026-07-01",deliverable:"Website content audit",nextAction:"Review all pages and flag edits",lastUpdated:"2026-06-08"},
+  {id:86,projectName:"Social media strategy for The TARA Approach",client:"Stephanie Mines",category:"Content & Marketing",status:"Pending",dueDate:"2026-07-15",deliverable:"Social media strategy doc",nextAction:"Schedule strategy call with Stephanie",lastUpdated:"2026-06-08"},
+  {id:87,projectName:"Draft monthly email newsletter for TARA",client:"Stephanie Mines",category:"Content & Marketing",status:"Pending",dueDate:"2026-06-30",deliverable:"June newsletter draft",nextAction:"Gather content from Stephanie",lastUpdated:"2026-06-08"},
+  {id:88,projectName:"Create promotional graphics for TARA workshops",client:"Stephanie Mines",category:"Content & Marketing",status:"In Progress",dueDate:"2026-06-28",deliverable:"Workshop promo graphics",nextAction:"Confirm workshop dates with Stephanie",lastUpdated:"2026-06-08"},
+  {id:89,projectName:"Monthly check-in report — hours, tasks, wins",client:"Stephanie Mines",category:"Reporting & Check-ins",status:"Pending",dueDate:"2026-06-30",deliverable:"June report for Stephanie",nextAction:"Compile hours and tasks",lastUpdated:"2026-06-08"},
+];
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+const SC={Complete:{bg:"#d4edda",text:"#155724",border:"#28a745"},"In Progress":{bg:"#cce5ff",text:"#004085",border:"#007bff"},Pending:{bg:"#fff3cd",text:"#856404",border:"#fd7e14"},Blocked:{bg:"#f8d7da",text:"#721c24",border:"#dc3545"}};
+const today=new Date();today.setHours(0,0,0,0);
+const addDays=(d,n)=>{const r=new Date(d);r.setDate(r.getDate()+n);return r;};
+const parseD=s=>{if(!s)return null;const[y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d);};
+const fmtD=s=>{if(!s)return"—";return parseD(s).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});};
+const todayStr=()=>new Date().toISOString().slice(0,10);
+function bucket(s){
+  if(!s)return"none";
+  const d=parseD(s);
+  if(d<today)return"overdue";
+  if(d<=addDays(today,7))return"thisweek";
+  if(d<=addDays(today,14))return"nextweek";
+  if(d<=addDays(today,30))return"nextmonth";
+  return"later";
+}
+const load=(k,fb)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):fb;}catch{return fb;}};
+
+// ── CSV PARSE ─────────────────────────────────────────────────────────────────
+function csvRow(r){const res=[];let c="",q=false;for(let i=0;i<r.length;i++){const ch=r[i];if(ch==='"'){if(q&&r[i+1]==='"'){c+='"';i++;}else q=!q;}else if(ch===','&&!q){res.push(c.trim());c="";}else c+=ch;}res.push(c.trim());return res;}
+const CM={projectName:["project name","project","task","task name","name","title"],client:["client","client name"],status:["status","state"],dueDate:["due date","due","deadline","date due"],category:["category","section","group","area"],deliverable:["deliverable","deliverables","output"],nextAction:["next action","next step","action","next"],lastUpdated:["last updated","updated","modified"]};
+function detectCols(headers){const m={};headers.forEach((h,i)=>{const hn=h.toLowerCase().replace(/[^a-z ]/g,"").trim();for(const[f,aliases]of Object.entries(CM)){if(aliases.some(a=>hn===a||hn.includes(a))&&!m[f])m[f]=i;}});return m;}
+function parseCSV(text,cname){
+  const lines=text.split(/\r?\n/).filter(l=>l.trim());
+  if(lines.length<2)return[];
+  const headers=csvRow(lines[0]);
+  const cm=detectCols(headers);
+  const tasks=[];
+  for(let i=1;i<lines.length;i++){
+    const cols=csvRow(lines[i]);
+    if(cols.every(c=>!c.trim()))continue;
+    const g=f=>cm[f]!==undefined?(cols[cm[f]]||"").trim():"";
+    const name=g("projectName");if(!name)continue;
+    tasks.push({id:Date.now()+i+Math.random(),projectName:name,client:cname,category:g("category")||"General",status:g("status")||"Pending",dueDate:g("dueDate")||"",deliverable:g("deliverable")||"",nextAction:g("nextAction")||"",lastUpdated:g("lastUpdated")||todayStr()});
+  }
+  return tasks;
+}
+function parseText(text,cname){
+  const lines=text.split(/\r?\n/).filter(l=>l.trim());
+  const first=lines[0]||"";
+  if(first.split(",").length>=3||first.split("\t").length>=3)return parseCSV(text.replace(/\t/g,","),cname);
+  let cat="General";const tasks=[];
+  for(const line of lines){
+    const s=line.replace(/^#+\s*/,"").replace(/^\*+|\*+$/g,"").trim();
+    if(!s)continue;
+    if(line.match(/^#{1,3}\s/)||(s.length<60&&s.endsWith(":")&&!s.match(/[☐✅✓]/)))  {cat=s.replace(/:$/,"").trim();continue;}
+    const name=s.replace(/^[☐✅✓✔•\-\*]\s*/,"").trim();
+    if(!name||name.length<3)continue;
+    const done=line.includes("✅")||line.includes("✓")||line.includes("✔");
+    tasks.push({id:Date.now()+tasks.length+Math.random(),projectName:name,client:cname,category:cat,status:done?"Complete":"Pending",dueDate:"",deliverable:"",nextAction:"",lastUpdated:todayStr()});
+  }
+  return tasks;
+}
+
+// ── APP ───────────────────────────────────────────────────────────────────────
+function App(){
+  const [user,setUser]=useState(null);
+  const [loginEmail,setLoginEmail]=useState("");
+  const [loginErr,setLoginErr]=useState("");
+  const [tab,setTab]=useState("tasks");
+  const [previewAs,setPreviewAs]=useState(null);
+  const [clients,setClients]=useState(()=>load("doc_clients",SEED_CLIENTS));
+  const [tasks,setTasks]=useState(()=>load("doc_tasks",SEED_TASKS));
+  const [notifs,setNotifs]=useState(()=>load("doc_notifs",[]));
+  // admin filters
+  const [aC,setAC]=useState("All");
+  const [aSt,setASt]=useState("All");
+  const [aDu,setADu]=useState("All");
+  const [aSr,setASr]=useState("");
+  const [aCol,setACol]=useState("dueDate");
+  const [aDir,setADir]=useState("asc");
+  // client filters
+  const [cSt,setCSt]=useState("All");
+  const [cDu,setCDu]=useState("All");
+  const [cSr,setCSr]=useState("");
+  const [cCol,setCCol]=useState("dueDate");
+  const [cDir,setCDir]=useState("asc");
+  // note
+  const [noteText,setNoteText]=useState("");
+  const [notePrj,setNotePrj]=useState("General");
+  const [noteSent,setNoteSent]=useState(false);
+  // notif panel
+  const [notifOpen,setNotifOpen]=useState(false);
+  const [expNotif,setExpNotif]=useState(null);
+  // client modal
+  const [showModal,setShowModal]=useState(false);
+  const [editId,setEditId]=useState(null);
+  const [nc,setNc]=useState({name:"",email:"",org:"",phone:"",website:""});
+  const [ncErr,setNcErr]=useState("");
+  // upload
+  const [upClient,setUpClient]=useState("");
+  const [upStatus,setUpStatus]=useState(null);
+  const fileRef=useRef();
+
+  useEffect(()=>{localStorage.setItem("doc_clients",JSON.stringify(clients));},[clients]);
+  useEffect(()=>{localStorage.setItem("doc_tasks",JSON.stringify(tasks));},[tasks]);
+  useEffect(()=>{localStorage.setItem("doc_notifs",JSON.stringify(notifs));},[notifs]);
+
+  const ADMINS=["dianaocasio53@gmail.com","diana@dianaocasiollc.com"];
+  function buildAccounts(){const a={};ADMINS.forEach(em=>a[em]={role:"admin",name:"Diana"});clients.forEach(c=>{if(c.email)a[c.email.toLowerCase()]={role:"client",name:c.name};});return a;}
+  function doLogin(){const acc=buildAccounts()[loginEmail.trim().toLowerCase()];if(acc){setUser(acc);setLoginErr("");}else setLoginErr("Email not recognized. Check with Diana for your login email.");}
+
+  function sortT(arr,col,dir){return[...arr].sort((a,b)=>{let va=a[col]??"",vb=b[col]??"";if(col==="dueDate"){va=va||"9999-12-31";vb=vb||"9999-12-31";}const c=va<vb?-1:va>vb?1:0;return dir==="asc"?c:-c;});}
+  function togSort(col,cur,dir,sC,sD){if(cur===col)sD(dir==="asc"?"desc":"asc");else{sC(col);sD("asc");}}
+  function filtT(arr,{client,status,due,search}){return arr.filter(t=>{
+    if(client&&client!=="All"&&t.client!==client)return false;
+    if(status&&status!=="All"&&t.status!==status)return false;
+    if(due&&due!=="All"){const b=bucket(t.dueDate);if(due==="Overdue"&&b!=="overdue")return false;if(due==="This Week"&&b!=="thisweek")return false;if(due==="Next Week"&&b!=="nextweek")return false;if(due==="Next Month"&&b!=="nextmonth"&&b!=="thisweek"&&b!=="nextweek")return false;if(due==="Completed"&&t.status!=="Complete")return false;}
+    if(search){const q=search.toLowerCase();if(!t.projectName.toLowerCase().includes(q)&&!(t.category||"").toLowerCase().includes(q))return false;}
+    return true;
+  });}
+
+  function sendNote(){if(!noteText.trim())return;setNotifs(p=>[{id:Date.now(),client:user.name,project:notePrj,message:noteText,timestamp:new Date().toLocaleString(),read:false},...p]);setNoteText("");setNotePrj("General");setNoteSent(true);setTimeout(()=>setNoteSent(false),3000);}
+  function markRead(id){setNotifs(p=>p.map(n=>n.id===id?{...n,read:true}:n));}
+  function markAll(){setNotifs(p=>p.map(n=>({...n,read:true})));}
+  const unread=notifs.filter(n=>!n.read).length;
+
+  function saveClient(){
+    if(!nc.name.trim()||!nc.email.trim()){setNcErr("Name and email are required.");return;}
+    const em=nc.email.trim().toLowerCase();
+    if(!editId&&clients.some(c=>c.email.toLowerCase()===em)){setNcErr("A client with that email already exists.");return;}
+    if(editId){setClients(p=>p.map(c=>c.id===editId?{...c,...nc,email:em}:c));}
+    else{const id=em.replace(/[^a-z0-9]/g,"-");setClients(p=>[...p,{id,name:nc.name.trim(),email:em,org:nc.org.trim(),phone:nc.phone.trim(),website:nc.website.trim(),addedDate:todayStr(),status:"Active"}]);}
+    setShowModal(false);setNc({name:"",email:"",org:"",phone:"",website:""});setNcErr("");setEditId(null);
+  }
+  function startEdit(c){setNc({name:c.name,email:c.email,org:c.org||"",phone:c.phone||"",website:c.website||""});setEditId(c.id);setShowModal(true);setNcErr("");}
+  function toggleStatus(id){setClients(p=>p.map(c=>c.id===id?{...c,status:c.status==="Active"?"Inactive":"Active"}:c));}
+
+  function handleUpload(ev){
+    const file=ev.target.files[0];if(!file)return;
+    if(!upClient){setUpStatus("noclient");return;}
+    const cl=clients.find(c=>c.id===upClient);if(!cl)return;
+    const reader=new FileReader();
+    reader.onload=re=>{
+      try{
+        const text=re.target.result;
+        const parsed=parseText(text,cl.name);
+        if(!parsed.length){setUpStatus("empty");return;}
+        setTasks(prev=>{const ex=new Set(prev.filter(t=>t.client===cl.name).map(t=>t.projectName.toLowerCase().trim()));const nw=parsed.filter(t=>!ex.has(t.projectName.toLowerCase().trim()));return[...prev,...nw];});
+        setUpStatus({count:parsed.length,name:cl.name});
+      }catch{setUpStatus("error");}
+      if(fileRef.current)fileRef.current.value="";
+    };
+    reader.readAsText(file);
+  }
+
+  if(!user){
+    const cEmails=clients.map(c=>c.email).join(" | ");
+    return e("div",{className:"login-wrap"},
+      e("div",{className:"login-card"},
+        e("div",{style:{textAlign:"center",marginBottom:20}},
+          e("div",{style:{fontSize:32}},"✨"),
+          e("div",{style:{color:"#1a1a2e",fontSize:22,fontWeight:800,marginBottom:4}},"DianaOcasioInc"),
+          e("div",{style:{color:"#555",fontSize:13,marginBottom:24}},"Client Project Dashboard — Enter your email to sign in")
+        ),
+        e("label",{className:"lbl"},"Email Address"),
+        e("input",{className:"inp",type:"email",placeholder:"your@email.com",value:loginEmail,
+          onChange:ev=>setLoginEmail(ev.target.value),onKeyDown:ev=>ev.key==="Enter"&&doLogin()}),
+        loginErr&&e("div",{className:"err"},loginErr),
+        e("button",{className:"btn",style:{width:"100%",padding:"10px 0",fontSize:15},onClick:doLogin},"Sign In"),
+        e("div",{style:{marginTop:16,fontSize:11,color:"#bbb",textAlign:"center",lineHeight:1.7}},
+          "Admin: dianaocasio53@gmail.com",e("br"),`Clients: ${cEmails}`)
+      )
+    );
+  }
+
+  const isAdmin=user.role==="admin";
+  const effClient=previewAs||user.name;
+  const isClientView=!isAdmin||!!previewAs;
+  const activeClients=clients.filter(c=>c.status==="Active");
+
+  const aFiltered=sortT(filtT(tasks,{client:aC,status:aSt,due:aDu,search:aSr}),aCol,aDir);
+  const cFiltered=sortT(filtT(tasks,{client:effClient,status:cSt,due:cDu,search:cSr}),cCol,cDir);
+  const cProjects=[...new Set(tasks.filter(t=>t.client===effClient).map(t=>t.projectName))];
+
+  // status badge
+  const Bdg=({status})=>{const c=SC[status]||{bg:"#eee",text:"#333",border:"#aaa"};return e("span",{style:{background:c.bg,color:c.text,border:`1px solid ${c.border}`,borderRadius:12,padding:"2px 10px",fontSize:12,fontWeight:600,whiteSpace:"nowrap"}},status);};
+
+  // sort icon
+  const SI=({col,sc,sd})=>{if(sc!==col)return e("span",{style:{opacity:.3,marginLeft:4}},"⇅");return e("span",{style:{marginLeft:4}},sd==="asc"?"↑":"↓");};
+
+  // table
+  function mkTable(rows,cols,sc,sd,onSort,emptyMsg){
+    return e("div",{style:{overflowX:"auto"}},
+      e("table",null,
+        e("thead",null,e("tr",null,...cols.map(c=>e("th",{key:c.k,onClick:()=>onSort(c.k)},c.l,e(SI,{col:c.k,sc,sd}))))),
+        e("tbody",null,...rows.map((t,i)=>e("tr",{key:t.id,style:{background:i%2===0?"#fff":"#fafafa"}},
+          ...cols.map(c=>{
+            if(c.k==="status")return e("td",{key:"st"},e(Bdg,{status:t.status}));
+            if(c.k==="client")return e("td",{key:"cl",style:{whiteSpace:"nowrap"}},e("span",{style:{fontSize:11,background:"#1a1a2e",color:"#d4af37",borderRadius:10,padding:"2px 8px"}},t.client.split(" ")[0]));
+            if(c.k==="dueDate"){const ov=bucket(t.dueDate)==="overdue"&&t.status!=="Complete";return e("td",{key:"dd",style:{whiteSpace:"nowrap",color:ov?"#dc3545":"#333",fontWeight:ov?700:400}},fmtD(t.dueDate),ov&&e("span",{style:{fontSize:10,marginLeft:4,color:"#dc3545"}},"OVERDUE"));}
+            if(c.k==="projectName")return e("td",{key:"pn",style:{maxWidth:260,fontWeight:500}},t.projectName);
+            if(c.k==="category")return e("td",{key:"cat",style:{fontSize:11,color:"#666",whiteSpace:"nowrap"}},t.category);
+            if(c.k==="deliverable")return e("td",{key:"del",style:{maxWidth:200,fontSize:12,color:"#444"}},t.deliverable);
+            if(c.k==="nextAction")return e("td",{key:"na",style:{maxWidth:180,fontSize:12,color:"#444"}},t.nextAction);
+            if(c.k==="lastUpdated")return e("td",{key:"lu",style:{whiteSpace:"nowrap",fontSize:12,color:"#888"}},fmtD(t.lastUpdated));
+            return e("td",{key:c.k},t[c.k]||"");
+          })
+        )),rows.length===0&&e("tr",null,e("td",{colSpan:cols.length,style:{textAlign:"center",color:"#aaa",padding:32}},emptyMsg||"No tasks match your filters.")))
+      )
+    );
+  }
+
+  // filter sidebar
+  function mkSidebar(isAdm){
+    const filtered=isAdm?aFiltered:cFiltered;
+    const statV=isAdm?aSt:cSt, setStatV=isAdm?setASt:setCSt;
+    const duV=isAdm?aDu:cDu, setDuV=isAdm?setADu:setCDu;
+    const srV=isAdm?aSr:cSr, setSrV=isAdm?setASr:setCSr;
+    return e("div",{className:"sidebar"},
+      e("div",{className:"card"},
+        e("div",{className:"section-title"},"Filters"),
+        isAdm&&e("label",{className:"lbl"},"Client"),
+        isAdm&&e("select",{className:"sel",value:aC,onChange:ev=>setAC(ev.target.value)},
+          e("option",null,"All"),...activeClients.map(c=>e("option",{key:c.id,value:c.name},c.name))),
+        e("label",{className:"lbl"},"Status"),
+        e("select",{className:"sel",value:statV,onChange:ev=>setStatV(ev.target.value)},
+          ["All","Complete","In Progress","Pending","Blocked"].map(s=>e("option",{key:s},s))),
+        e("label",{className:"lbl"},"Due Date"),
+        e("select",{className:"sel",value:duV,onChange:ev=>setDuV(ev.target.value)},
+          ["All","Overdue","This Week","Next Week","Next Month","Completed"].map(s=>e("option",{key:s},s))),
+        e("label",{className:"lbl"},"Search"),
+        e("input",{className:"inp",placeholder:"Search tasks...",value:srV,onChange:ev=>setSrV(ev.target.value)}),
+        e("div",{style:{fontSize:12,color:"#888",marginTop:4}},`${filtered.length} task${filtered.length!==1?"s":""} shown`)
+      ),
+      e("div",{className:"card"},
+        e("div",{className:"section-title"},isAdm?"Quick Stats":"My Progress"),
+        ...["Complete","In Progress","Pending","Blocked"].map(st=>{
+          const cnt=tasks.filter(t=>t.status===st&&(isAdm?(aC==="All"||t.client===aC):t.client===effClient)).length;
+          const c=SC[st];
+          return e("div",{key:st,style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}},
+            e("span",{style:{fontSize:12}},st),
+            e("span",{style:{background:c.bg,color:c.text,borderRadius:10,padding:"1px 8px",fontSize:12,fontWeight:700}},cnt));
+        })
+      )
+    );
+  }
+
+  // notif panel
+  const NotifPanel=()=>e("div",{className:"notif-panel"},
+    e("div",{className:"notif-header"},
+      e("span",null,"📨 Client Updates ",unread>0&&e("span",{className:"badge"},unread)),
+      e("div",{style:{display:"flex",gap:8}},
+        unread>0&&e("button",{className:"btn-sm",onClick:markAll},"Mark all read"),
+        e("button",{className:"btn-sm",style:{background:"transparent",color:"#d4af37",border:"1px solid #d4af37"},onClick:()=>setNotifOpen(false)},"✕")
+      )
+    ),
+    e("div",{style:{flex:1,overflowY:"auto"}},
+      notifs.length===0&&e("div",{style:{padding:24,color:"#aaa",fontSize:13,textAlign:"center"}},"No updates from clients yet."),
+      ...notifs.map(n=>e("div",{key:n.id,className:"notif-item",
+        style:{background:n.read?"#fff":"#fffbf0",borderLeft:n.read?"3px solid transparent":"3px solid #d4af37"},
+        onClick:()=>{setExpNotif(expNotif===n.id?null:n.id);markRead(n.id);}},
+        e("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}},
+          e("span",{style:{fontWeight:700,fontSize:13,color:"#1a1a2e"}},n.client),
+          !n.read&&e("span",{className:"badge"},"NEW")),
+        e("div",{style:{fontSize:11,color:"#888",marginBottom:4}},n.timestamp),
+        e("div",{style:{fontSize:12,color:"#555",fontStyle:"italic"}},"Re: ",n.project),
+        expNotif===n.id&&e("div",{style:{marginTop:8,padding:"10px 12px",background:"#f8f9fa",borderRadius:6,fontSize:13,color:"#333"}},n.message)
+      ))
+    )
+  );
+
+  // client modal
+  const ClientModal=()=>e("div",{className:"modal-bg",onClick:ev=>{if(ev.target===ev.currentTarget){setShowModal(false);setEditId(null);setNcErr("");}}},
+    e("div",{className:"modal-card"},
+      e("div",{style:{fontSize:17,fontWeight:800,color:"#1a1a2e",marginBottom:16,borderBottom:"2px solid #d4af37",paddingBottom:8}},editId?"Edit Client":"Add New Client"),
+      e("label",{className:"lbl"},"Full Name *"),
+      e("input",{className:"inp",placeholder:"Jane Smith",value:nc.name,onChange:ev=>setNc(p=>({...p,name:ev.target.value}))}),
+      e("label",{className:"lbl"},"Login Email * (used to sign in)"),
+      e("input",{className:"inp",type:"email",placeholder:"jane@company.com",value:nc.email,onChange:ev=>setNc(p=>({...p,email:ev.target.value}))}),
+      e("label",{className:"lbl"},"Organization / Company"),
+      e("input",{className:"inp",placeholder:"Acme Corp",value:nc.org,onChange:ev=>setNc(p=>({...p,org:ev.target.value}))}),
+      e("label",{className:"lbl"},"Phone"),
+      e("input",{className:"inp",placeholder:"(555) 000-0000",value:nc.phone,onChange:ev=>setNc(p=>({...p,phone:ev.target.value}))}),
+      e("label",{className:"lbl"},"Website"),
+      e("input",{className:"inp",placeholder:"www.company.com",value:nc.website,onChange:ev=>setNc(p=>({...p,website:ev.target.value}))}),
+      ncErr&&e("div",{className:"err"},ncErr),
+      e("div",{style:{display:"flex",gap:10,marginTop:4}},
+        e("button",{className:"btn",onClick:saveClient},editId?"Save Changes":"Add Client"),
+        e("button",{className:"btn-ghost",onClick:()=>{setShowModal(false);setEditId(null);setNcErr("");}  },"Cancel")
+      )
+    )
+  );
+
+  // clients tab
+  const ClientsTab=()=>e("div",{style:{padding:24,maxWidth:1600,margin:"0 auto"}},
+    // upload
+    e("div",{className:"card"},
+      e("div",{className:"section-title"},"📂 Upload Task File"),
+      e("p",{style:{fontSize:13,color:"#555",marginBottom:14}},"Upload an Excel (saved as CSV) or Word (saved as .txt) file to load tasks. New tasks are merged in — existing tasks are never removed."),
+      e("div",{style:{display:"flex",gap:16,flexWrap:"wrap",alignItems:"flex-end",marginBottom:12}},
+        e("div",{style:{flex:1,minWidth:200}},
+          e("label",{className:"lbl"},"Select Client"),
+          e("select",{className:"sel",style:{marginBottom:0},value:upClient,onChange:ev=>{setUpClient(ev.target.value);setUpStatus(null);}},
+            e("option",{value:""},"— Choose a client —"),
+            ...activeClients.map(c=>e("option",{key:c.id,value:c.id},`${c.name} (${c.org||c.email})`))
+          )
+        ),
+        e("div",null,
+          e("input",{ref:fileRef,type:"file",accept:".csv,.txt,.tsv",id:"fup",style:{display:"none"},onChange:handleUpload}),
+          e("label",{htmlFor:"fup",className:"btn",style:{display:"inline-block",opacity:upClient?1:.5,cursor:"pointer"}},"📁 Choose File")
+        )
+      ),
+      upStatus==="error"&&e("div",{style:{color:"#dc3545",fontSize:13,padding:"8px 12px",background:"#fdf0f0",borderRadius:6}},"⚠️ Could not parse the file. Make sure it is saved as .csv or .txt."),
+      upStatus==="noclient"&&e("div",{style:{color:"#dc3545",fontSize:13,padding:"8px 12px",background:"#fdf0f0",borderRadius:6}},"⚠️ Please select a client first."),
+      upStatus==="empty"&&e("div",{style:{color:"#dc3545",fontSize:13,padding:"8px 12px",background:"#fdf0f0",borderRadius:6}},"⚠️ No tasks found. Make sure your file has a column called 'Task' or 'Project Name'."),
+      upStatus&&upStatus.count&&e("div",{style:{color:"#155724",fontSize:13,padding:"8px 12px",background:"#d4edda",borderRadius:6}},
+        "✅ Imported ",e("strong",null,upStatus.count)," tasks for ",e("strong",null,upStatus.name),". Duplicates were skipped."),
+      e("div",{className:"upload-hint"},
+        e("strong",null,"Excel:")," File → Save As → CSV (Comma delimited). Columns: Project Name, Status, Due Date, Category, Deliverable, Next Action.",e("br"),
+        e("strong",null,"Word:")," File → Save As → Plain Text (.txt). Use headings for categories, lines starting with ☐ or ✅ for tasks.")
+    ),
+    // client list
+    e("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}},
+      e("div",{style:{fontSize:17,fontWeight:800,color:"#1a1a2e"}},`All Clients (${clients.length})`),
+      e("button",{className:"btn",onClick:()=>{setNc({name:"",email:"",org:"",phone:"",website:""});setEditId(null);setNcErr("");setShowModal(true);}},"+ Add New Client")
+    ),
+    ...clients.map(c=>{
+      const tot=tasks.filter(t=>t.client===c.name).length;
+      const done=tasks.filter(t=>t.client===c.name&&t.status==="Complete").length;
+      const pct=tot>0?Math.round(done/tot*100):0;
+      return e("div",{key:c.id,className:"client-card"},
+        e("div",{style:{flex:1}},
+          e("div",{style:{display:"flex",alignItems:"center",gap:10,marginBottom:6}},
+            e("span",{style:{fontSize:16,fontWeight:800,color:"#1a1a2e"}},c.name),
+            e("span",{style:{fontSize:11,background:c.status==="Active"?"#d4edda":"#f8d7da",color:c.status==="Active"?"#155724":"#721c24",borderRadius:10,padding:"1px 8px",fontWeight:700}},c.status)
+          ),
+          e("div",{style:{fontSize:12,color:"#555",lineHeight:1.9}},
+            c.org&&e("span",null,"🏢 ",c.org,"  "),
+            e("span",null,"📧 ",c.email,"  "),
+            c.phone&&e("span",null,"📞 ",c.phone,"  "),
+            c.website&&e("span",null,"🌐 ",c.website,"  "),
+            e("span",null,"📅 Added ",fmtD(c.addedDate))
+          ),
+          e("div",{style:{marginTop:8,display:"flex",alignItems:"center",gap:10}},
+            e("div",{className:"progress-bar-bg"},e("div",{className:"progress-bar-fill",style:{width:`${pct}%`}})),
+            e("span",{style:{fontSize:11,color:"#666"}},`${done}/${tot} tasks (${pct}%)`)
+          )
+        ),
+        e("div",{style:{display:"flex",gap:8,flexShrink:0}},
+          e("button",{className:"btn-sm",onClick:()=>startEdit(c)},"Edit"),
+          e("button",{className:"btn-ghost",onClick:()=>toggleStatus(c.id)},c.status==="Active"?"Deactivate":"Reactivate")
+        )
+      );
+    }),
+    clients.length===0&&e("div",{className:"card",style:{textAlign:"center",color:"#aaa",padding:40}},"No clients yet. Click Add New Client to get started.")
+  );
+
+  const ADMIN_COLS=[{k:"projectName",l:"Project Name"},{k:"client",l:"Client"},{k:"category",l:"Category"},{k:"status",l:"Status"},{k:"dueDate",l:"Due Date"},{k:"deliverable",l:"Deliverable"},{k:"nextAction",l:"Next Action"},{k:"lastUpdated",l:"Last Updated"}];
+  const CLIENT_COLS=[{k:"projectName",l:"Project Name"},{k:"category",l:"Category"},{k:"status",l:"Status"},{k:"dueDate",l:"Due Date"},{k:"deliverable",l:"Deliverable"},{k:"nextAction",l:"Next Action"},{k:"lastUpdated",l:"Last Updated"}];
+  const headerTitle=isAdmin&&!previewAs?"DianaOcasioInc — Admin Dashboard":`${effClient.split(" ")[0]}'s Project Dashboard`;
+
+  return e("div",{style:{fontFamily:"'Segoe UI',Arial,sans-serif",minHeight:"100vh",background:"#f0f2f5"}},
+    // header
+    e("div",{className:"header"},
+      e("span",{className:"header-title"},"DianaOcasioInc · ",headerTitle),
+      e("div",{className:"header-right"},
+        isAdmin&&!previewAs&&e("button",{className:"btn-outline",onClick:()=>setNotifOpen(o=>!o)},
+          "📨 Updates ",unread>0&&e("span",{className:"badge",style:{marginLeft:4}},unread)),
+        previewAs&&e("button",{className:"btn-outline",onClick:()=>setPreviewAs(null)},"← Back to Admin"),
+        e("button",{className:"btn-outline",onClick:()=>{setUser(null);setLoginEmail("");setPreviewAs(null);}},"Sign Out")
+      )
+    ),
+    // tabs
+    isAdmin&&!previewAs&&e("div",{className:"tab-bar"},
+      e("button",{className:`tab${tab==="tasks"?" active":""}`,onClick:()=>setTab("tasks")},"📋 Tasks"),
+      e("button",{className:`tab${tab==="clients"?" active":""}`,onClick:()=>setTab("clients")},
+        "👥 Clients ",clients.length>0&&e("span",{className:"badge-gold"},clients.length))
+    ),
+    // preview banner
+    previewAs&&e("div",{className:"preview-banner"},
+      e("span",null,"👁 Previewing as: ",e("strong",null,previewAs)),
+      e("button",{style:{background:"white",color:"#fd7e14",border:"none",borderRadius:5,padding:"4px 12px",fontWeight:700,cursor:"pointer"},onClick:()=>setPreviewAs(null)},"Exit Preview")
+    ),
+    // content
+    isClientView
+      // CLIENT VIEW
+      ? e("div",{className:"body"},
+          mkSidebar(false),
+          e("div",{className:"main"},
+            e("div",{className:"card"},
+              e("div",{className:"section-title"},"My Tasks"),
+              mkTable(cFiltered,CLIENT_COLS,cCol,cDir,col=>togSort(col,cCol,cDir,setCCol,setCDir))
+            ),
+            e("div",{className:"card"},
+              e("div",{className:"section-title"},"📩 Send Diana an Update"),
+              e("label",{className:"lbl"},"What is this about?"),
+              e("select",{className:"sel",style:{maxWidth:400},value:notePrj,onChange:ev=>setNotePrj(ev.target.value)},
+                e("option",{value:"General"},"General Note"),
+                ...cProjects.slice(0,20).map(p=>e("option",{key:p,value:p},p.length>60?p.substring(0,60)+"...":p))
+              ),
+              e("label",{className:"lbl"},"Your message"),
+              e("textarea",{className:"ta",rows:4,style:{marginBottom:12},placeholder:"Type your update, question, or note here...",value:noteText,onChange:ev=>setNoteText(ev.target.value)}),
+              e("div",{style:{display:"flex",alignItems:"center",gap:12}},
+                e("button",{className:"btn",onClick:sendNote},"Send to Diana"),
+                noteSent&&e("span",{className:"ok"},"✓ Message sent!")
+              )
+            )
+          )
+        )
+      // ADMIN TASKS TAB
+      : tab==="tasks"
+        ? e("div",null,
+            e("div",{className:"body"},
+              mkSidebar(true),
+              e("div",{className:"main"},
+                e("div",{className:"card"},
+                  e("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}},
+                    e("div",{className:"section-title"},"All Client Tasks"),
+                    e("div",{style:{display:"flex",gap:8,flexWrap:"wrap"}},
+                      ...activeClients.map(c=>e("button",{key:c.id,className:"btn-sm",onClick:()=>setPreviewAs(c.name)},`Preview as ${c.name.split(" ")[0]}`))
+                    )
+                  ),
+                  mkTable(aFiltered,ADMIN_COLS,aCol,aDir,col=>togSort(col,aCol,aDir,setACol,setADir))
+                )
+              )
+            ),
+            e("button",{onClick:()=>setNotifOpen(true),style:{position:"fixed",right:notifOpen?350:0,top:120,background:"#1a1a2e",color:"#d4af37",border:"none",borderRadius:"8px 0 0 8px",padding:"12px 10px",cursor:"pointer",fontSize:12,fontWeight:700,zIndex:199,transition:"right .2s"}},
+              "📨",unread>0&&e("span",{className:"badge",style:{display:"block",marginTop:4}},unread))
+          )
+        // CLIENTS TAB
+        : e(ClientsTab,null),
+    // panels
+    notifOpen&&isAdmin&&e(NotifPanel,null),
+    showModal&&e(ClientModal,null)
+  );
+}
+
+const root=ReactDOM.createRoot(document.getElementById("root"));
+root.render(React.createElement(App));
+})();
+</script>
+</body>
+</html>
